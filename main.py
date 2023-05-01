@@ -3,6 +3,7 @@ Trying out my implementation of the Automatic Gradient Descent. It is implemente
 in a similar fashion to the standard PyTorch optimizers.
 """
 import torch
+import numpy as np
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
@@ -10,6 +11,14 @@ from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 
 from agd import AGD
+
+
+# Controlling the randomness in PyTorch and NumPy.
+RANDOM_SEED = 42
+np.random.seed(RANDOM_SEED)
+torch.backends.cudnn.benchmark = True
+torch.manual_seed(RANDOM_SEED)
+torch.cuda.manual_seed(RANDOM_SEED)
 
 
 class TestNet(nn.Module):
@@ -23,6 +32,7 @@ class TestNet(nn.Module):
     def __init__(self, in_size, out_size):
         super().__init__()
 
+        # Since AGD doesn't support biases, we exclude them.
         self.l1 = nn.Linear(in_size, 4 * in_size, bias=False)
         self.l2 = nn.Linear(4 * in_size, out_size, bias=False)
 
@@ -70,13 +80,14 @@ def train(
 
             optimizer.step()
 
-            progressbar.set_description(f"Epoch: {epoch + 1}/{epochs}, Loss: {loss.item()}")
+            progressbar.set_description(f"Epoch: {epoch + 1}/{epochs}, Loss: {loss.item():.2f}")
 
 
 # Creating a random classification dataset.
-N_FEATURES, N_CLASSES = 20, 2
+N_FEATURES, N_CLASSES = 40, 2
 X, y = make_classification(
     n_samples=1000, 
+    n_informative=30,
     n_features=N_FEATURES, 
     n_classes=N_CLASSES
 )
@@ -114,3 +125,12 @@ train(
     epochs=3,
     device=DEVICE
 )
+
+
+# Since the dataset is not complex, even after the first epoch the loss is less
+# than 1. You can test the optimizer with more complex data.
+
+# Expected training output of the current setup:
+# Epoch: 1/3, Loss: 0.93: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 13/13 [00:02<00:00,  6.48it/s]
+# Epoch: 2/3, Loss: 0.69: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 13/13 [00:00<00:00, 416.06it/s]
+# Epoch: 3/3, Loss: 0.41: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 13/13 [00:00<00:00, 243.49it/s]
