@@ -40,6 +40,7 @@ class AGD(Optimizer):
 
         return loss
 
+    @torch.no_grad()
     def _init_weights(self):
         # Looping through each weight matrix and initializing it to be uniform
         # semi-orthogonal and re-scaled by a factor of sqrt(matrix_rows/matrix_cols).
@@ -54,6 +55,7 @@ class AGD(Optimizer):
             self._orthogonalize(p, dim=p.dim())
             self._scale(p)
 
+    @torch.no_grad()
     def _orthogonalize(self, weights: torch.Tensor, dim: int):
         # Orthogonalize a 2D weights matrix.
         if dim == 2:
@@ -65,6 +67,7 @@ class AGD(Optimizer):
                 for y in range(weights.shape[3]):
                     orthogonal_(weights[:, :, x, y])
 
+    @torch.no_grad()
     def _scale(self, weights: torch.Tensor):
         # Here we are calculating the approximation of the largest singular value
         # of `weights`. This is mentioned in Persicription 1 of the paper. It's mainly
